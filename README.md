@@ -1,7 +1,7 @@
 ![COVID-19 NASA SPACE APPS](NASA-Challenge.png)
 
 
-**Link dos dados:**
+**Fonte dos dados:**
 
 **IDH:** __http://hdr.undp.org/en/composite/HDI__
 
