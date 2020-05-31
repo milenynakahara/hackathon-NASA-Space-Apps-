@@ -2,7 +2,8 @@ library(tidyverse)
 library(zoo)
 library(openxlsx)
 library(highcharter)
-
+library(shiny)
+library(leaflet)
 
 source("funcoes.R", encoding = "UTF-8")
 
@@ -28,7 +29,8 @@ dados_novos_casos <- dados_covid %>%
 
 # Casos acumulados
 dados_casos_acumulados <- dados_covid %>% 
-  filter(date == ultimo_dia)
+  filter(date == ultimo_dia) %>% 
+  rename(lat = Lat, long = Long)
 
 
 
@@ -56,7 +58,7 @@ df_final_casos_acumulados <- dados_casos_acumulados %>%
 
 
 df_acumulado_paises <- df_final_casos_acumulados %>% 
-  group_by(Country.Region) %>% 
+  group_by(Country.Region, lat, long) %>% 
   summarise(
     casos_confirmados = sum(casos_confirmados, na.rm = T),
     mortes = sum(mortes, na.rm = T),
@@ -70,12 +72,54 @@ dados_idh <- read.xlsx("dados/idh_2017.xlsx")
 
 dados_idh_paises <- dados_idh %>% 
   filter(!is.na(HDI.rank)) %>% 
+  mutate(posicao = HDI.rank) %>% 
   mutate(Country = as.character(atualizar_nome_paises2(as.character(Country)))) %>% 
   dplyr::select(-X5, -X7, -X9, -X11)
 
 
 
-# Top 30 países com maior
+# Top 30 maiores e menores IDH's
+top_30_maiores_idhs <- dados_idh_paises %>% 
+  arrange(HDI.rank) %>% 
+  head(30)
+
+
+# Top 30 maiores e menores IDH's
+top_30_menores_idhs <- dados_idh_paises %>% 
+  arrange(desc(HDI.rank)) %>% 
+  head(30)
+
+plot1 <- 
+  highchart() %>%
+  hc_title(
+    text = "30 países com maior IDH em 2017"
+  ) %>% 
+  hc_xAxis(categories = as.character(top_30_maiores_idhs$`Country`)) %>% 
+  hc_add_series(top_30_maiores_idhs, type = "bar", name = "30 países com maior IDH", hcaes(x = `Country`, y = `Human.Development.Index.(HDI).2017`), color = "#028975") %>% 
+  hc_tooltip(pointFormat = paste0('IDH: <strong>{point.y:.2f}%</strong><br>',
+                                  'Posição no ranking (IDH): <strong>{point.posicao}</strong><br>'))
+
+plot2 <- 
+  highchart() %>%
+  hc_title(
+    text = "30 países com menor IDH em 2017"
+  ) %>% 
+  hc_xAxis(categories = as.character(top_30_menores_idhs$`Country`)) %>% 
+  hc_add_series(top_30_menores_idhs, type = "bar", name = "30 países com menor IDH", hcaes(x = `Country`, y = `Human.Development.Index.(HDI).2017`), color = "#028975") %>% 
+  hc_tooltip(pointFormat = paste0('IDH: <strong>{point.y:.2f}%</strong><br>',
+                                  'Posição no ranking (IDH): <strong>{point.posicao}</strong><br>'))
+
+fluidRow(
+  column(
+    width = 6,
+    plot1
+  ),
+  column(
+    width = 6,
+    plot2
+  )
+)
+
 
 
 
@@ -92,9 +136,83 @@ df_maiores_numeros_casos <- df_acumulado_paises %>%
   arrange(desc(casos_confirmados)) %>% 
   head(20)
 
+
+
+# Distribuição países - Casos confirmados
+cor_confirmados <- "#ff9000"
+
+texto_confirmados <- paste0(
+  "<b>País ou região:</b> ", df_maiores_numeros_casos$Country.Region, "<br/>",
+  "<b>Província ou estado:</b> ", ifelse(df_maiores_numeros_casos$Province.State == "", "Sem informação", as.character(df_maiores_numeros_casos$Province.State)), "<br/>", 
+  "<b>Total de casos confirmados:</b> ", df_maiores_numeros_casos$casos_confirmados, "<br/>"
+) %>%
+  lapply(htmltools::HTML)
+
+plot_confirmados <- 
+leaflet(df_maiores_numeros_casos) %>% 
+  addTiles()  %>% 
+  addProviderTiles("Esri.WorldImagery") %>%
+  addCircleMarkers(~long, ~lat, 
+                   fillColor = cor_confirmados,
+                   fillOpacity = 0.7,
+                   color="white",
+                   radius=c(20:1), stroke=FALSE,
+                   label = texto_confirmados,
+                   labelOptions = 
+                     labelOptions( style = list("font-weight" = "normal", padding = "3px 8px"),
+                                   textsize = "13px", direction = "auto"))
+
+
+
+df_mortes <- df_maiores_numeros_casos %>%  
+  arrange(desc(mortes))
+
+
+cor_mortes <- "#d60404"
+
+texto_mortes <- paste0(
+  "<b>País ou região:</b> ", df_mortes$Country.Region, "<br/>",
+  "<b>Província ou estado:</b> ", ifelse(df_mortes$Province.State == "", "Sem informação", as.character(df_mortes$Province.State)), "<br/>", 
+  "<b>Total de mortes:</b> ", df_mortes$mortes, "<br/>"
+) %>%
+  lapply(htmltools::HTML)
+
+
+plot_mortes <- 
+leaflet(df_mortes) %>% 
+  addTiles()  %>% 
+  addProviderTiles("Esri.WorldImagery") %>%
+  addCircleMarkers(~long, ~lat, 
+                   fillColor = cor_mortes,
+                   fillOpacity = 0.7,
+                   color="white",
+                   radius=c(20:1), stroke=FALSE,
+                   label = texto_mortes,
+                   labelOptions = 
+                     labelOptions( style = list("font-weight" = "normal", padding = "3px 8px"),
+                                   textsize = "13px", direction = "auto"))
+
+
+
+fluidRow(
+  column(
+    width = 6,
+    h3("Casos confirmados - 20 países com o maior número de casos"),
+    plot_confirmados
+  ),
+  column(
+    width = 6,
+    h3("óbitos - 20 países com o maior número de casos"),
+    plot_mortes
+  )
+)
+
+
+# Gráfico de colunas 
+
 highchart() %>%
   hc_title(
-    text = "Top 20 - Maior número de casos"
+    text = "Top 20 países com maior número de casos"
   ) %>% 
   hc_xAxis(categories = as.character(df_maiores_numeros_casos$`Country.Region`)) %>% 
   hc_add_series(df_maiores_numeros_casos, type = "column", name = "Casos confirmados", hcaes(x = `Country.Region`, y = casos_confirmados), color = "#f7f4a5") %>% 
@@ -113,7 +231,7 @@ pct_maior_numero_casos <-
 
 highchart() %>%
   hc_title(
-    text = "Top 20 - Maior porcentagem de mortes em relação aos casos"
+    text = "Top 20 países com maior porcentagem de mortes em relação aos casos"
   ) %>% 
   hc_xAxis(categories = as.character(pct_maior_numero_casos$`Country.Region`)) %>% 
   hc_add_series(pct_maior_numero_casos, type = "column", name = "% Mortes em relação aos casos", hcaes(x = `Country.Region`, y = pc_mortes_casos), color = "#960041") %>% 
@@ -183,5 +301,7 @@ df_densidade_populacional <- read.csv2("dados/datasets_507962_1091873_population
 
 
 # Juntando os dados dos países com maior número de casos com os dados da densidade populacional
+
+df_densidade <- 
 df_maiores_numeros_casos %>% 
-  left_join(df_densidade_populacional, by= c("Country.Region"="Country..or.dependency.")) %>% View()
+  left_join(df_densidade_populacional, by= c("Country.Region"="Country..or.dependency."))
