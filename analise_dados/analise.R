@@ -78,36 +78,63 @@ dados_idh_paises <- dados_idh %>%
 
 
 
-# Top 30 maiores e menores IDH's
-top_30_maiores_idhs <- dados_idh_paises %>% 
+# Juntando os países com o valores acumulados ao IDH
+
+df_acumulado_paises <- df_acumulado_paises %>% 
+  left_join(dados_idh_paises, by = c("Country.Region"="Country"))
+
+
+# Maiores número de casos - Top 20 países --------------------------------------
+df_maiores_numeros_casos <- df_acumulado_paises %>% 
+  arrange(desc(casos_confirmados)) %>% 
+  head(20)
+
+paises_20_num_casos <- df_maiores_numeros_casos %>% 
+  pull(Country.Region) %>% 
+  as.character()
+
+
+# Top 50 maiores e menores IDH's
+top_50_maiores_idhs <- dados_idh_paises %>% 
   arrange(HDI.rank) %>% 
-  head(30)
+  head(50) %>% 
+  mutate(
+    cores = ifelse(Country %in% paises_20_num_casos, "#990000", "#028975")
+  )
 
 
-# Top 30 maiores e menores IDH's
-top_30_menores_idhs <- dados_idh_paises %>% 
+# Top 50 maiores e menores IDH's
+top_50_menores_idhs <- dados_idh_paises %>% 
   arrange(desc(HDI.rank)) %>% 
-  head(30)
+  head(50) %>% 
+  mutate(
+    cores = ifelse(Country %in% paises_20_num_casos, "#990000", "#028975")
+  )
 
 plot1 <- 
   highchart() %>%
   hc_title(
-    text = "30 países com maior IDH em 2017"
+    text = "50 países com maior IDH em 2017"
   ) %>% 
-  hc_xAxis(categories = as.character(top_30_maiores_idhs$`Country`)) %>% 
-  hc_add_series(top_30_maiores_idhs, type = "bar", name = "30 países com maior IDH", hcaes(x = `Country`, y = `Human.Development.Index.(HDI).2017`), color = "#028975") %>% 
+  hc_xAxis(categories = as.character(top_50_maiores_idhs$`Country`)) %>% 
+  hc_add_series(top_50_maiores_idhs, type = "bar", name = "50 países com maior IDH", hcaes(x = `Country`, y = `Human.Development.Index.(HDI).2017`, color = cores), color = "#028975") %>% 
   hc_tooltip(pointFormat = paste0('IDH: <strong>{point.y:.2f}%</strong><br>',
                                   'Posição no ranking (IDH): <strong>{point.posicao}</strong><br>'))
+
+plot1$height <- 600
+
 
 plot2 <- 
   highchart() %>%
   hc_title(
-    text = "30 países com menor IDH em 2017"
+    text = "50 países com menor IDH em 2017"
   ) %>% 
-  hc_xAxis(categories = as.character(top_30_menores_idhs$`Country`)) %>% 
-  hc_add_series(top_30_menores_idhs, type = "bar", name = "30 países com menor IDH", hcaes(x = `Country`, y = `Human.Development.Index.(HDI).2017`), color = "#028975") %>% 
+  hc_xAxis(categories = as.character(top_50_menores_idhs$`Country`)) %>% 
+  hc_add_series(top_50_menores_idhs, type = "bar", name = "50 países com menor IDH", hcaes(x = `Country`, y = `Human.Development.Index.(HDI).2017`, color = cores), color = "#028975") %>% 
   hc_tooltip(pointFormat = paste0('IDH: <strong>{point.y:.2f}%</strong><br>',
                                   'Posição no ranking (IDH): <strong>{point.posicao}</strong><br>'))
+
+plot2$height <- 600
 
 fluidRow(
   column(
@@ -119,22 +146,6 @@ fluidRow(
     plot2
   )
 )
-
-
-
-
-# Juntando os países com o valores acumulados ao IDH
-
-df_acumulado_paises <- df_acumulado_paises %>% 
-  left_join(dados_idh_paises, by = c("Country.Region"="Country"))
-
-
-
-
-# Maiores número de casos - Top 20 países --------------------------------------
-df_maiores_numeros_casos <- df_acumulado_paises %>% 
-  arrange(desc(casos_confirmados)) %>% 
-  head(20)
 
 
 
@@ -227,16 +238,19 @@ pct_maior_numero_casos <-
   df_maiores_numeros_casos %>% 
   mutate(posicao = HDI.rank) %>%
   arrange(desc(pc_mortes_casos)) %>% 
-  ungroup()
+  ungroup() %>% 
+  head(20)
 
 highchart() %>%
   hc_title(
-    text = "Top 20 países com maior porcentagem de mortes em relação aos casos"
+    text = "% mortes dos país com maior número de casos"
   ) %>% 
   hc_xAxis(categories = as.character(pct_maior_numero_casos$`Country.Region`)) %>% 
   hc_add_series(pct_maior_numero_casos, type = "column", name = "% Mortes em relação aos casos", hcaes(x = `Country.Region`, y = pc_mortes_casos), color = "#960041") %>% 
   hc_tooltip(pointFormat = paste0('% Mortes em relação aos casos: <strong>{point.y:.2f}%</strong><br>',
-                                  'Posição no ranking (IDH): <strong>{point.posicao}</strong><br>'))
+                                  'Posição no ranking (IDH): <strong>{point.posicao}</strong><br>',
+                                  'Número de casos: <strong>{point.casos_confirmados}</strong><br>',
+                                  'Número de óbitos: <strong>{point.mortes}</strong><br>'))
 
 
 
@@ -249,7 +263,7 @@ idh_top_20_paises_casos <- df_maiores_numeros_casos %>%
 
 highchart() %>%
   hc_title(
-    text = "IDH - Top 20 países com maiores casos"
+    text = "IDH dos 20 países com maiores casos"
   ) %>% 
   hc_xAxis(categories = as.character(idh_top_20_paises_casos$`Country.Region`)) %>% 
   hc_add_series(idh_top_20_paises_casos, type = "bar", name = "IDH", hcaes(x = `Country.Region`, y = `Human.Development.Index.(HDI).2017`), color = "#028975") %>% 
