@@ -148,26 +148,28 @@ fluidRow(
 )
 
 
+mapa_casos_confirmados <- df_acumulado_paises %>% 
+  arrange(desc(casos_confirmados))
 
 # Distribuição países - Casos confirmados
 cor_confirmados <- "#ff9000"
 
 texto_confirmados <- paste0(
-  "<b>País ou região:</b> ", df_maiores_numeros_casos$Country.Region, "<br/>",
-  "<b>Província ou estado:</b> ", ifelse(df_maiores_numeros_casos$Province.State == "", "Sem informação", as.character(df_maiores_numeros_casos$Province.State)), "<br/>", 
-  "<b>Total de casos confirmados:</b> ", df_maiores_numeros_casos$casos_confirmados, "<br/>"
+  "<b>País ou região:</b> ", mapa_casos_confirmados$Country.Region, "<br/>",
+  "<b>Província ou estado:</b> ", ifelse(mapa_casos_confirmados$Province.State == "", "Sem informação", as.character(mapa_casos_confirmados$Province.State)), "<br/>", 
+  "<b>Total de casos confirmados:</b> ", mapa_casos_confirmados$casos_confirmados, "<br/>"
 ) %>%
   lapply(htmltools::HTML)
 
 plot_confirmados <- 
-leaflet(df_maiores_numeros_casos) %>% 
+  leaflet(mapa_casos_confirmados) %>% 
   addTiles()  %>% 
   addProviderTiles("Esri.WorldImagery") %>%
   addCircleMarkers(~long, ~lat, 
                    fillColor = cor_confirmados,
                    fillOpacity = 0.7,
                    color="white",
-                   radius=c(20:1), stroke=FALSE,
+                   radius=c(15:1), stroke=FALSE,
                    label = texto_confirmados,
                    labelOptions = 
                      labelOptions( style = list("font-weight" = "normal", padding = "3px 8px"),
@@ -175,7 +177,7 @@ leaflet(df_maiores_numeros_casos) %>%
 
 
 
-df_mortes <- df_maiores_numeros_casos %>%  
+df_mortes <- df_acumulado_paises %>%  
   arrange(desc(mortes))
 
 
@@ -190,14 +192,14 @@ texto_mortes <- paste0(
 
 
 plot_mortes <- 
-leaflet(df_mortes) %>% 
+  leaflet(df_mortes) %>% 
   addTiles()  %>% 
   addProviderTiles("Esri.WorldImagery") %>%
   addCircleMarkers(~long, ~lat, 
                    fillColor = cor_mortes,
                    fillOpacity = 0.7,
                    color="white",
-                   radius=c(20:1), stroke=FALSE,
+                   radius=c(15:1), stroke=FALSE,
                    label = texto_mortes,
                    labelOptions = 
                      labelOptions( style = list("font-weight" = "normal", padding = "3px 8px"),
@@ -208,16 +210,15 @@ leaflet(df_mortes) %>%
 fluidRow(
   column(
     width = 6,
-    h3("Casos confirmados - 20 países com o maior número de casos"),
+    h3("Casos confirmados - Distribuição no mundo"),
     plot_confirmados
   ),
   column(
     width = 6,
-    h3("óbitos - 20 países com o maior número de casos"),
+    h3("óbitos - Distribuição no mundo"),
     plot_mortes
   )
 )
-
 
 # Gráfico de colunas 
 
@@ -271,25 +272,69 @@ highchart() %>%
                                   'Posição no ranking (IDH): <strong>{point.posicao}</strong><br>'))
 
 
-# Verificando alguma relação - distribuição das variáveis - IDH
-df_maiores_numeros_casos %>% 
-hchart("scatter",
-       hcaes(
-         y = pc_mortes_casos,
-         x = `Human.Development.Index.(HDI).2017`,
-         group = `Country.Region`
-       )
-) %>% 
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+
+# Verificando alguma relação - distribuição das variáveis - IDH - Mortes
+df_acumulado_paises %>%
+  filter(`Country.Region` != "Canada") %>% 
+  hchart("scatter",
+         hcaes(
+           y = casos_confirmados,
+           x = `Human.Development.Index.(HDI).2017`,
+           group = `Country.Region`
+         )
+  ) %>% 
+  hc_tooltip(pointFormat = paste0('Número de casos: <strong>{point.y:.2f}</strong><br>',
+                                  'IDH: <strong>{point.x:.2f}</strong><br>')) %>%
+  hc_xAxis(title = list(text = "IDH")) %>% 
+  hc_yAxis(title = list(text = "Número de casos")) %>% 
+  hc_legend(enabled = T) %>% 
+  hc_title(text = "Distribuição do número de casos e o IDH dos países")
+
+
+# Escolaridade média em anos  - Mortes
+df_acumulado_paises %>% 
+  filter(`Country.Region` != "Canada") %>% 
+  hchart("scatter",
+         hcaes(
+           y = casos_confirmados,
+           x = `Mean.years.of.schooling.2017`,
+           group = `Country.Region`
+         )
+  ) %>% 
+  hc_tooltip(pointFormat = paste0('Número de casos: <strong>{point.y:.2f}</strong><br>',
+                                  'Escolaridade média em anos: <strong>{point.x:.2f}</strong><br>')) %>%
+  hc_xAxis(title = list(text = "Escolaridade média em anos")) %>% 
+  hc_yAxis(title = list(text = "Número de casos")) %>% 
+  hc_legend(enabled = T) %>% 
+  hc_title(text = "Distribuição do número de casos e a escolaridade média em anos de cada país")
+
+
+
+
+# Verificando alguma relação - distribuição das variáveis - IDH - Mortes
+df_acumulado_paises %>%
+  filter(`Country.Region` != "Canada") %>% 
+  hchart("scatter",
+         hcaes(
+           y = pc_mortes_casos,
+           x = `Human.Development.Index.(HDI).2017`,
+           group = `Country.Region`
+         )
+  ) %>% 
   hc_tooltip(pointFormat = paste0('Percentual de mortes em relação aos casos: <strong>{point.y:.2f}%</strong><br>',
                                   'IDH: <strong>{point.x:.2f}</strong><br>')) %>%
   hc_xAxis(title = list(text = "IDH")) %>% 
   hc_yAxis(title = list(text = "Percentual de mortes em relação aos casos")) %>% 
   hc_legend(enabled = T) %>% 
-  hc_title(text = "Distribuição das mortes e o IDH dos países com maior número de casos")
+  hc_title(text = "Distribuição das mortes e o IDH dos países")
 
 
-# Escolaridade média em anos
-df_maiores_numeros_casos %>% 
+# Escolaridade média em anos  - Mortes
+df_acumulado_paises %>% 
+  filter(`Country.Region` != "Canada") %>% 
   hchart("scatter",
          hcaes(
            y = pc_mortes_casos,
@@ -302,7 +347,7 @@ df_maiores_numeros_casos %>%
   hc_xAxis(title = list(text = "Escolaridade média em anos")) %>% 
   hc_yAxis(title = list(text = "Percentual de mortes em relação aos casos")) %>% 
   hc_legend(enabled = T) %>% 
-  hc_title(text = "Distribuição das mortes e a escolaridade média em anos dos países com maior número de casos")
+  hc_title(text = "Distribuição das mortes e a escolaridade média em anos dos países")
 
 
 
@@ -310,8 +355,17 @@ df_maiores_numeros_casos %>%
 # ------------------------------------------------------------------------------
 # Carregando dados da densidade populacional
 
-df_densidade_populacional <- read.csv2("dados/datasets_507962_1091873_population_by_country_2020.csv", sep=",") %>% 
-  mutate(Country..or.dependency. = atualizar_nome_paises2(Country..or.dependency.))
+df_densidade_populacional <- read.csv2("dados/populacao_onu.csv", sep=",") %>% 
+  filter(Time == 2020) %>% 
+  group_by(Location) %>% 
+  summarise(
+    Ano = unique(Time),
+    PopMale = median(as.numeric(PopMale), na.rm = T),
+    PopFemale = median(as.numeric(PopFemale), na.rm = T),
+    PopTotal = median(as.numeric(PopTotal), na.rm = T),
+    PopDensity = median(as.numeric(PopDensity), na.rm = T)
+  )
+  # mutate(Country..or.dependency. = atualizar_nome_paises2(Country..or.dependency.))
 
 
 # Juntando os dados dos países com maior número de casos com os dados da densidade populacional

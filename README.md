@@ -7,4 +7,4 @@
 
 **COVID-19:** __https://github.com/CSSEGISandData/COVID-19__
 
-**Densidade populacional:** __https://www.kaggle.com/tanuprabhu/population-by-country-2020__
+**Densidade populacional:** __https://population.un.org/wpp/Download/Standard/CSV/__
