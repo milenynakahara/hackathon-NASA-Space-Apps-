@@ -141,3 +141,17 @@ atualizar_nome_paises2 <- function(text) {
   return(text)
   
 }
+
+
+
+removendo_porcentagem <- function(valor) {
+  
+  valor <- 
+    valor %>% 
+    str_trim() %>% 
+    str_replace_all(" %", "")
+  
+  
+  return(valor)
+  
+}

@@ -55,6 +55,93 @@ df_final_casos_acumulados <- dados_casos_acumulados %>%
 
 
 
+dados_periodo <- 
+  dados_covid %>% 
+  group_by(date) %>% 
+  summarise(
+    casos_confirmados = sum(casos_confirmados, na.rm = T),
+    mortes = sum(mortes, na.rm = T),
+    casos_curados = sum(casos_curados, na.rm = T)
+  ) %>% 
+  mutate(
+    casos_confirmados1 = c(0, head(casos_confirmados, -1)),
+    mortes1 = c(0, head(mortes, -1)),
+    casos_curados1 = c(0, head(casos_curados, -1))
+  )
+
+
+# Casos acumulados ao longo do tempo ----
+
+
+
+highchart() %>%
+  hc_xAxis(categories = as.character(dados_periodo$date)) %>%
+  hc_add_series(
+    dados_periodo,
+    name = "Casos",
+    type = "line",
+    hcaes(x = as.character(date), y = casos_confirmados)
+  ) %>%
+  hc_add_series(
+    dados_periodo,
+    name = "Mortes",
+    type = "line",
+    hcaes(x = as.character(date), y = mortes)
+  ) %>%
+  hc_add_series(
+    dados_periodo,
+    name = "Recuperados",
+    type = "line",
+    hcaes(x = as.character(date), y = casos_curados)
+  ) %>%
+  hc_tooltip(pointFormat = paste0("{point.series.name}: <strong>{point.y}</strong>")) %>%
+  hc_colors(c("#ff9000", "#d60404", "#198c00")) %>% 
+  hc_title(text = "COVID ao longo do tempo  - Dados acumulados")
+
+
+
+
+# Casos novos ao longo do tempo ----
+
+dados_novos_periodo <- 
+  dados_periodo %>% 
+  mutate(
+    casos_confirmados = casos_confirmados - casos_confirmados1,
+    mortes = mortes - mortes1,
+    casos_curados = casos_curados - casos_curados1
+  )
+
+
+
+highchart() %>%
+  hc_xAxis(categories = as.character(dados_novos_periodo$date)) %>%
+  hc_add_series(
+    dados_novos_periodo,
+    name = "Casos",
+    type = "line",
+    hcaes(x = as.character(date), y = casos_confirmados)
+  ) %>%
+  hc_add_series(
+    dados_novos_periodo,
+    name = "Mortes",
+    type = "line",
+    hcaes(x = as.character(date), y = mortes)
+  ) %>%
+  hc_add_series(
+    dados_novos_periodo,
+    name = "Recuperados",
+    type = "line",
+    hcaes(x = as.character(date), y = casos_curados)
+  ) %>%
+  hc_tooltip(pointFormat = paste0("{point.series.name}: <strong>{point.y}</strong>")) %>%
+  hc_colors(c("#ff9000", "#d60404", "#198c00")) %>% 
+  hc_title(text = "COVID ao longo do tempo - Dados novos")
+
+
+# --------------------------------------------------------
+
+
+
 # Visualizando os ultimo status do covid nos países
 
 
@@ -212,12 +299,12 @@ leaflet(df_mortes) %>%
 fluidRow(
   column(
     width = 6,
-    h3("Casos confirmados - Distribuição no mundo"),
+    h3("Casos confirmados"),
     plot_confirmados
   ),
   column(
     width = 6,
-    h3("óbitos - Distribuição no mundo"),
+    h3("óbitos"),
     plot_mortes
   )
 )
@@ -279,77 +366,94 @@ highchart() %>%
 
 
 # Verificando alguma relação - distribuição das variáveis - IDH - Casos
-df_acumulado_paises %>%
-  filter(`Country.Region` != "Canada") %>% 
+df_acumulado_paises %>% 
+  mutate(group = "casos") %>% 
+  group_by(group) %>% 
+  mutate(
+    pct_casos = (casos_confirmados/sum(casos_confirmados))*100
+  ) %>% 
   hchart("scatter",
          hcaes(
-           y = casos_confirmados,
+           y = pct_casos,
            x = `Human.Development.Index.(HDI).2017`,
            group = `Country.Region`
          )
   ) %>% 
-  hc_tooltip(pointFormat = paste0('Número de casos: <strong>{point.y:.2f}</strong><br>',
+  hc_tooltip(pointFormat = paste0('% casos confirmados: <strong>{point.y:.2f}</strong><br>',
                                   'IDH: <strong>{point.x:.2f}</strong><br>')) %>%
   hc_xAxis(title = list(text = "IDH")) %>% 
-  hc_yAxis(title = list(text = "Número de casos")) %>% 
+  hc_yAxis(title = list(text = "% casos confirmados")) %>% 
   hc_legend(enabled = T) %>% 
-  hc_title(text = "Distribuição do número de casos e o IDH dos países")
+  hc_title(text = "Distribuição da % casos e o IDH dos países")
 
 
-# Escolaridade média em anos  - Casos
+# Escolaridade média em anos  - Cassos
 df_acumulado_paises %>% 
-  filter(`Country.Region` != "Canada") %>% 
+  mutate(group = "casos") %>% 
+  group_by(group) %>% 
+  mutate(
+    pct_casos = (casos_confirmados/sum(casos_confirmados))*100
+  ) %>% 
   hchart("scatter",
          hcaes(
-           y = casos_confirmados,
+           y = pct_casos,
            x = `Mean.years.of.schooling.2017`,
            group = `Country.Region`
          )
   ) %>% 
-  hc_tooltip(pointFormat = paste0('Número de casos: <strong>{point.y:.2f}</strong><br>',
+  hc_tooltip(pointFormat = paste0('% de casos confirmados: <strong>{point.y:.2f}</strong><br>',
                                   'Escolaridade média em anos: <strong>{point.x:.2f}</strong><br>')) %>%
   hc_xAxis(title = list(text = "Escolaridade média em anos")) %>% 
-  hc_yAxis(title = list(text = "Número de casos")) %>% 
+  hc_yAxis(title = list(text = "% de casos confirmados")) %>% 
   hc_legend(enabled = T) %>% 
-  hc_title(text = "Distribuição do número de casos e a escolaridade média em anos de cada país")
+  hc_title(text = "Distribuição da % casos e a escolaridade média em anos de cada país")
 
 
 
 
 # Verificando alguma relação - distribuição das variáveis - IDH - Mortes
 df_acumulado_paises %>%
-  filter(`Country.Region` != "Canada") %>% 
+   mutate(group = "obitos") %>% 
+  group_by(group) %>% 
+  mutate(
+    pct_mortes = (mortes/sum(mortes))*100
+  ) %>%  
   hchart("scatter",
          hcaes(
-           y = pc_mortes_casos,
+           y = pct_mortes,
            x = `Human.Development.Index.(HDI).2017`,
            group = `Country.Region`
          )
   ) %>% 
-  hc_tooltip(pointFormat = paste0('Percentual de mortes em relação aos casos: <strong>{point.y:.2f}%</strong><br>',
+  hc_tooltip(pointFormat = paste0('% de Óbitos: <strong>{point.y:.2f}%</strong><br>',
                                   'IDH: <strong>{point.x:.2f}</strong><br>')) %>%
   hc_xAxis(title = list(text = "IDH")) %>% 
-  hc_yAxis(title = list(text = "Percentual de mortes em relação aos casos")) %>% 
+  hc_yAxis(title = list(text = "% óbitos")) %>% 
   hc_legend(enabled = T) %>% 
-  hc_title(text = "Distribuição das mortes e o IDH dos países")
+  hc_title(text = "Distribuição da % de óbitos e o IDH dos países")
 
 
 # Escolaridade média em anos  - Mortes
 df_acumulado_paises %>% 
-  filter(`Country.Region` != "Canada") %>% 
+   mutate(group = "obitos") %>% 
+  group_by(group) %>% 
+  mutate(
+    pct_mortes = (mortes/sum(mortes))*100
+  ) %>% 
   hchart("scatter",
          hcaes(
-           y = pc_mortes_casos,
+           y = pct_mortes,
            x = `Mean.years.of.schooling.2017`,
            group = `Country.Region`
          )
   ) %>% 
-  hc_tooltip(pointFormat = paste0('Percentual de mortes em relação aos casos: <strong>{point.y:.2f}%</strong><br>',
+  hc_tooltip(pointFormat = paste0('% de óbitos: <strong>{point.y:.2f}%</strong><br>',
                                   'Escolaridade média em anos: <strong>{point.x:.2f}</strong><br>')) %>%
   hc_xAxis(title = list(text = "Escolaridade média em anos")) %>% 
-  hc_yAxis(title = list(text = "Percentual de mortes em relação aos casos")) %>% 
+  hc_yAxis(title = list(text = "% de óbitos")) %>% 
   hc_legend(enabled = T) %>% 
-  hc_title(text = "Distribuição das mortes e a escolaridade média em anos dos países")
+  hc_title(text = "Distribuição da % de óbitos e a escolaridade média em anos dos países")
+
 
 
 
@@ -357,15 +461,47 @@ df_acumulado_paises %>%
 # ------------------------------------------------------------------------------
 # Carregando dados da densidade populacional
 
+# Carregando dados da densidade populacional
+
 df_densidade_populacional <- read.csv2("dados/datasets_507962_1091873_population_by_country_2020.csv", sep=",") %>% 
-  mutate(Country..or.dependency. = atualizar_nome_paises2(Country..or.dependency.))
+  mutate(
+    `Country.Region` = atualizar_nome_paises2(Country..or.dependency.),
+    `% World.Share` = removendo_porcentagem(World.Share),
+    `% Urban.Pop..` = removendo_porcentagem(Urban.Pop..),
+    `% Yearly.Change` = removendo_porcentagem(Yearly.Change)
+  ) %>% 
+  dplyr::select(-Yearly.Change, -`Urban.Pop..`, -`World.Share`)
 
 
 # Juntando os dados dos países com maior número de casos com os dados da densidade populacional
 
-df_densidade <- 
-df_maiores_numeros_casos %>% 
-  left_join(df_densidade_populacional, by= c("Country.Region"="Country..or.dependency."))
+df_populacao <- 
+  df_acumulado_paises %>% 
+  left_join(df_densidade_populacional, by="Country.Region") %>% 
+  group_by(Country.Region) %>% 
+  summarise(
+    `%casos_populacao` = sum(casos_confirmados, na.rm = T)/sum(`Population..2020.`, na.rm = T),
+    populacao = sum(`Population..2020.`, na.rm = T),
+    `% Urban.Pop..` = unique(`% Urban.Pop..`),
+    `densidade_pop_km2` = unique(`Density..P.KmÂ².`)
+  ) %>% 
+  ungroup()
+
+
+df_populacao %>% 
+  hchart("scatter",
+         hcaes(
+           y = `%casos_populacao`,
+           x = densidade_pop_km2,
+           group = `Country.Region`
+         )
+  ) %>% 
+  hc_tooltip(pointFormat = paste0('% de casos na população: <strong>{point.y:.2f}%</strong><br>',
+                                  'Densidade por Km²: <strong>{point.x:.2f}</strong><br>')) %>%
+  hc_xAxis(title = list(text = "Densidade por km²")) %>% 
+  hc_yAxis(title = list(text = "% casos na população")) %>% 
+  hc_legend(enabled = T) %>% 
+  hc_title(text = "Distribuição da % casos na população e a densidade por km²")
 
 
 ```
