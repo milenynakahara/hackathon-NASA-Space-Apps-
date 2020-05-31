@@ -75,6 +75,10 @@ dados_idh_paises <- dados_idh %>%
 
 
 
+# Top 30 países com maior
+
+
+
 # Juntando os países com o valores acumulados ao IDH
 
 df_acumulado_paises <- df_acumulado_paises %>% 
@@ -103,6 +107,7 @@ highchart() %>%
 
 pct_maior_numero_casos <- 
   df_maiores_numeros_casos %>% 
+  mutate(posicao = HDI.rank) %>%
   arrange(desc(pc_mortes_casos)) %>% 
   ungroup()
 
@@ -111,13 +116,16 @@ highchart() %>%
     text = "Top 20 - Maior porcentagem de mortes em relação aos casos"
   ) %>% 
   hc_xAxis(categories = as.character(pct_maior_numero_casos$`Country.Region`)) %>% 
-  hc_add_series(pct_maior_numero_casos, type = "column", name = "% Mortes em relação aos casos", hcaes(x = `Country.Region`, y = pc_mortes_casos), color = "#960041")
+  hc_add_series(pct_maior_numero_casos, type = "column", name = "% Mortes em relação aos casos", hcaes(x = `Country.Region`, y = pc_mortes_casos), color = "#960041") %>% 
+  hc_tooltip(pointFormat = paste0('% Mortes em relação aos casos: <strong>{point.y:.2f}%</strong><br>',
+                                  'Posição no ranking (IDH): <strong>{point.posicao}</strong><br>'))
 
 
 
 
 # IDH desses - top 20 países
 idh_top_20_paises_casos <- df_maiores_numeros_casos %>% 
+  mutate(posicao = HDI.rank) %>% 
   arrange(`HDI.rank`) %>% 
   ungroup()
 
@@ -126,8 +134,9 @@ highchart() %>%
     text = "IDH - Top 20 países com maiores casos"
   ) %>% 
   hc_xAxis(categories = as.character(idh_top_20_paises_casos$`Country.Region`)) %>% 
-  hc_add_series(idh_top_20_paises_casos, type = "bar", name = "IDH", hcaes(x = `Country.Region`, y = `Human.Development.Index.(HDI).2017`), color = "#028975")
-
+  hc_add_series(idh_top_20_paises_casos, type = "bar", name = "IDH", hcaes(x = `Country.Region`, y = `Human.Development.Index.(HDI).2017`), color = "#028975") %>% 
+  hc_tooltip(pointFormat = paste0('IDH: <strong>{point.y:.2f}%</strong><br>',
+                                  'Posição no ranking (IDH): <strong>{point.posicao}</strong><br>'))
 
 
 # Verificando alguma relação - distribuição das variáveis - IDH
@@ -168,4 +177,11 @@ df_maiores_numeros_casos %>%
 
 # ------------------------------------------------------------------------------
 # Carregando dados da densidade populacional
-df_densidade_populacional <- read.csv2("dados/datasets_507962_1091873_population_by_country_2020.csv", sep=",")
+
+df_densidade_populacional <- read.csv2("dados/datasets_507962_1091873_population_by_country_2020.csv", sep=",") %>% 
+  mutate(Country..or.dependency. = atualizar_nome_paises2(Country..or.dependency.))
+
+
+# Juntando os dados dos países com maior número de casos com os dados da densidade populacional
+df_maiores_numeros_casos %>% 
+  left_join(df_densidade_populacional, by= c("Country.Region"="Country..or.dependency.")) %>% View()
