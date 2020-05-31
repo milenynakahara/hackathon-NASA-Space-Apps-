@@ -86,20 +86,57 @@ atualizar_nome_paises <- function(text) {
     str_replace_all("Korea", "Korea, South") %>% 
     str_replace_all("Diamond Princess", "Diamond Princess") %>% 
     str_replace_all("Eswatini", "Eswatini") %>% 
-    str_replace_all("Iran", "Iran") %>% 
+    str_replace_all("Iran (Islamic Republic of)", "Iran") %>% 
     str_replace_all("Kosovo", "Kosovo") %>% 
     str_replace_all("Laos", "Laos") %>% 
     str_replace_all("Moldova", "Moldova") %>% 
     str_replace_all("Zaandam", "MS Zaandam") %>% 
     str_replace_all("Macedonia", "North Macedonia") %>% 
-    str_replace_all("Russia", "Russia") %>% 
+    str_replace_all("Russian Federation", "Russia") %>% 
+    str_replace_all("Syria", "Syria") %>% 
+    str_replace_all("Taiwan", "Taiwan*") %>% 
+    str_replace_all("Tanzania", "Tanzania") %>% 
+    str_replace_all("United Kingdom", "United Kingdom") %>% 
+    str_replace_all("United States of America", "US") %>% 
+    str_replace_all("Venezuela", "Venezuela") %>% 
+    str_replace_all("Vietnam", "Vietnam")
+  
+  return(text)
+  
+}
+
+
+
+atualizar_nome_paises2 <- function(text) {
+  
+  text <- 
+    text %>% 
+    str_trim() %>% 
+    str_replace_all("Bolivia", "Bolivia") %>% 
+    str_replace_all("Brunei", "Brunei") %>% 
+    str_replace_all("Burma", "Burma") %>% 
+    str_replace_all("Brazzaville", "Congo (Brazzaville)") %>% 
+    str_replace_all("Kinshasa", "Congo (Kinshasa)") %>% 
+    str_replace_all("d'Ivoire", "Cote d'Ivoire") %>% 
+    str_replace_all("Czechia", "Czechia") %>% 
+    str_replace_all("Korea", "Korea, South") %>% 
+    str_replace_all("Diamond Princess", "Diamond Princess") %>% 
+    str_replace_all("Eswatini", "Eswatini") %>% 
+    str_replace_all("\\(Islamic Republic of\\)", "") %>% 
+    str_replace_all("Kosovo", "Kosovo") %>% 
+    str_replace_all("Laos", "Laos") %>% 
+    str_replace_all("Moldova", "Moldova") %>% 
+    str_replace_all("Zaandam", "MS Zaandam") %>% 
+    str_replace_all("Macedonia", "North Macedonia") %>% 
+    str_replace_all("Russian Federation", "Russia") %>% 
     str_replace_all("Syria", "Syria") %>% 
     str_replace_all("Taiwan", "Taiwan*") %>% 
     str_replace_all("Tanzania", "Tanzania") %>% 
     str_replace_all("United Kingdom", "United Kingdom") %>% 
     str_replace_all("United States", "US") %>% 
     str_replace_all("Venezuela", "Venezuela") %>% 
-    str_replace_all("Vietnam", "Vietnam")
+    str_replace_all("Vietnam", "Vietnam") %>% 
+    str_trim()
   
   return(text)
   

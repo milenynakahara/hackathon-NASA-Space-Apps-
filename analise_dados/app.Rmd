@@ -1,3 +1,5 @@
+```{r eval=TRUE,  echo=FALSE,cache=FALSE,  comment=FALSE, warning=FALSE,message=FALSE}
+
 library(tidyverse)
 library(zoo)
 library(openxlsx)
@@ -115,7 +117,6 @@ highchart() %>%
 
 
 
-
 # IDH desses - top 20 países
 idh_top_20_paises_casos <- df_maiores_numeros_casos %>% 
   arrange(`HDI.rank`) %>% 
@@ -165,7 +166,5 @@ df_maiores_numeros_casos %>%
 
 
 
+```
 
-# ------------------------------------------------------------------------------
-# Carregando dados da densidade populacional
-df_densidade_populacional <- read.csv2("dados/datasets_507962_1091873_population_by_country_2020.csv", sep=",")
